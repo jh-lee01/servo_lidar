@@ -25,7 +25,7 @@ class DigitalServoNode(Node):
             Bool, 'delivery_open_flag', self.delivery_callback, 10
         )
         self.create_subscription(
-            Bool, 'gimbal_look_down_flag', self.gimbal_callback, 10
+            Bool, '/camera/gimbal_cmd', self.gimbal_callback, 10
         )
 
         self.get_logger().info('Digital Signal Node Started (To Arduino)')
