@@ -4,76 +4,64 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Bool
 import Jetson.GPIO as GPIO
-import threading
 import time
 
+PWM_PIN = 33        # 물리 핀 번호 33
+PWM_FREQ = 50       # 서보모터 주파수
 
-class ServoControl(Node):
+INIT_ANGLE = 0
+TARGET_ANGLE = 180
+
+
+def angle_to_duty(angle):
+    return 2.5 + (angle / 180.0) * 10.0
+
+
+class ServoNode(Node):
     def __init__(self):
-        super().__init__('servo_control')
+        super().__init__('servo_node')
 
-        # ===== GPIO 설정 =====
-        self.servo_pin = 33           # BOARD 기준
-        GPIO.setmode(GPIO.BOARD)
-        GPIO.setup(self.servo_pin, GPIO.OUT)
-
-        # ===== Servo 설정 =====
-        self.pwm_hz = 50.0
-        self.period = 1.0 / self.pwm_hz
-        self.initial_angle = 0.0
-        self.target_angle = 90.0
-
-        self.current_angle = self.initial_angle
-        self.running = True
-
-        # ===== ROS2 Subscriber =====
-        self.sub = self.create_subscription(
+        self.subscription = self.create_subscription(
             Bool,
-            'servo_flag',
-            self.flag_callback,
+            'servo_cmd',
+            self.callback,
             10
         )
 
-        # ===== PWM Thread =====
-        self.pwm_thread = threading.Thread(target=self.pwm_loop)
-        self.pwm_thread.daemon = True
-        self.pwm_thread.start()
+        GPIO.setmode(GPIO.BOARD)
+        GPIO.setup(PWM_PIN, GPIO.OUT)
 
-        self.get_logger().info('Software PWM servo node started')
+        self.pwm = GPIO.PWM(PWM_PIN, PWM_FREQ)
+        self.pwm.start(angle_to_duty(INIT_ANGLE))
 
-    def angle_to_pulse(self, angle):
-        """
-        각도(deg) → 펄스폭(sec)
-        0deg = 1.0ms, 180deg = 2.0ms
-        """
-        return 0.001 + (angle / 180.0) * 0.001
+        self.current_state = False
+        self.get_logger().info('Servo node started')
 
-    def pwm_loop(self):
-        while self.running:
-            pulse_width = self.angle_to_pulse(self.current_angle)
+    def callback(self, msg: Bool):
+        if msg.data == self.current_state:
+            return
 
-            GPIO.output(self.servo_pin, GPIO.HIGH)
-            time.sleep(pulse_width)
+        self.current_state = msg.data
 
-            GPIO.output(self.servo_pin, GPIO.LOW)
-            time.sleep(self.period - pulse_width)
-
-    def flag_callback(self, msg):
         if msg.data:
-            self.current_angle = self.target_angle
+            angle = TARGET_ANGLE
+            self.get_logger().info('Move servo to TARGET position')
         else:
-            self.current_angle = self.initial_angle
+            angle = INIT_ANGLE
+            self.get_logger().info('Move servo to INIT position')
+
+        duty = angle_to_duty(angle)
+        self.pwm.ChangeDutyCycle(duty)
 
     def destroy_node(self):
-        self.running = False
-        self.pwm_thread.join()
+        self.pwm.stop()
         GPIO.cleanup()
         super().destroy_node()
 
 
-def main(args=None):
-    rclpy.init(args=args)
-    node = ServoControl()
+def main():
+    rclpy.init()
+    node = ServoNode()
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
