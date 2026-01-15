@@ -8,7 +8,7 @@ import time
 
 class LidarLiteNode(Node):
     def __init__(self):
-        super().__init__('lidar_lite_node')
+        super().__init__('lidar_node')
 
         # I2C 설정
         self.i2c_bus_num = 7
