@@ -17,7 +17,7 @@ class LidarLiteNode(Node):
         self.bus = SMBus(self.i2c_bus_num)
 
         # Publisher
-        self.publisher_ = self.create_publisher(Float32, 'lidar_distance_m', 10)
+        self.publisher_ = self.create_publisher(Float32, 'lidar_height', 10)
 
         # Timer (10 Hz)
         self.timer = self.create_timer(0.1, self.timer_callback)
