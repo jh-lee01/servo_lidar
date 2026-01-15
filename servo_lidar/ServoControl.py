@@ -23,7 +23,7 @@ class ServoNode(Node):
 
         self.subscription = self.create_subscription(
             Bool,
-            'servo_cmd',
+            'servo_flag',
             self.callback,
             10
         )
