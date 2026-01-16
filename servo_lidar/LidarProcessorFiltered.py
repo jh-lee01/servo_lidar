@@ -23,7 +23,7 @@ class LidarLiteNode(Node):
         self.timer = self.create_timer(0.25, self.timer_callback)
 
         # Median filter 설정
-        self.window_size = 5
+        self.window_size = 3
         self.buffer = deque(maxlen=self.window_size)
 
         self.get_logger().info('LiDAR-Lite v3 node started (median filter enabled)')

@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'servo_node = servo_lidar.ServoControl:main',
+            'gimbal_node = servo_lidar.GimbalControl:main',
             'lidar_node = servo_lidar.LidarProcessor:main',
             'filtered_lidar_node = servo_lidar.LidarProcessorFiltered:main'
         ],
