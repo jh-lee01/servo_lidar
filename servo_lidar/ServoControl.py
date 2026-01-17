@@ -20,15 +20,15 @@ class DigitalServoNode(Node):
         GPIO.setup(GIMBAL_PIN, GPIO.OUT, initial=GPIO.LOW)
 
         self.create_subscription(
-            Bool, 'gripper_open_flag', self.gripper_cb, 10
+            Bool, 'delivery_open_flag', self.delivery_callback, 10
         )
         self.create_subscription(
-            Bool, 'gimbal_lookdown_flag', self.gimbal_cb, 10
+            Bool, 'gimbal_look_down_flag', self.gimbal_callback, 10
         )
 
         self.get_logger().info('Digital Signal Node Started (To Arduino)')
 
-    def gripper_cb(self, msg: Bool):
+    def delivery_callback(self, msg: Bool):
         # True(Open) -> HIGH, False(Init) -> LOW
         level = GPIO.HIGH if msg.data else GPIO.LOW
         GPIO.output(GRIPPER_PIN, level)
@@ -36,7 +36,7 @@ class DigitalServoNode(Node):
         state = "HIGH (Open)" if level else "LOW (Close)"
         self.get_logger().info(f'Gripper: {state}')
 
-    def gimbal_cb(self, msg: Bool):
+    def gimbal_callback(self, msg: Bool):
         # True(Down) -> HIGH, False(Forward) -> LOW
         level = GPIO.HIGH if msg.data else GPIO.LOW
         GPIO.output(GIMBAL_PIN, level)
