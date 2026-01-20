@@ -5,6 +5,8 @@ from rclpy.node import Node
 from std_msgs.msg import Bool
 import Jetson.GPIO as GPIO
 
+GPIO.setwarnings(False)
+
 # 물리 핀 번호 설정 (아두이노 입력 핀과 연결)
 GRIPPER_PIN = 32
 GIMBAL_PIN = 33
