@@ -2,9 +2,12 @@
 
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
 from std_msgs.msg import Bool
 from px4_msgs.msg import InputRc
 import Jetson.GPIO as GPIO
+
+GPIO.setwarnings(False)
 
 # 물리 핀 번호 설정 (아두이노 입력 핀과 연결)
 GRIPPER_PIN = 32
@@ -20,32 +23,39 @@ class DigitalServoNode(Node):
         GPIO.setup(GRIPPER_PIN, GPIO.OUT, initial=GPIO.LOW)
         GPIO.setup(GIMBAL_PIN, GPIO.OUT, initial=GPIO.LOW)
 
+        qos_profile = rclpy.qos.QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=1
+        )
+
         self.input_rc = self.create_subscription(InputRc, '/fmu/out/input_rc', self.rc_callback, qos_profile)
 
         self.get_logger().info('Digital Signal Node Started (To Arduino)')
 
-    def rc_callback(self, msg)
+    def rc_callback(self, msg):
         delivery_channel = msg.values[7]
         gimbal_channel = msg.values[8]
 
         # delivery servo
         if delivery_channel > 1300:
             delivery_level = GPIO.HIGH
-        else
+        else:
             delivery_level = GPIO.LOW
           
-        GPIO.output(GRIPPER_PIN, level)
-        state = "HIGH (Open)" if level else "LOW (Close)"
+        GPIO.output(GRIPPER_PIN, delivery_level)
+        state = "HIGH (Open)" if delivery_level else "LOW (Close)"
         self.get_logger().info(f'Gripper: {state}')
 
         # gimbal servo
         if gimbal_channel > 1300:
             gimbal_level = GPIO.HIGH
-        else
+        else:
             gimbal_level = GPIO.LOW   
           
-        GPIO.output(GIMBAL_PIN, level)
-        state = "HIGH (Down)" if level else "LOW (Forward)"
+        GPIO.output(GIMBAL_PIN, gimbal_level)
+        state = "HIGH (Down)" if gimbal_level else "LOW (Forward)"
         self.get_logger().info(f'Gimbal: {state}')
       
     def destroy_node(self):
